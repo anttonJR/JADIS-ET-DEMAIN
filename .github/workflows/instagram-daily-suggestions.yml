@@ -1,0 +1,41 @@
+name: 📸 Instagram Daily Suggestions
+
+on:
+  schedule:
+    # Tous les jours à 6h du matin (UTC)
+    # Pour adapter à votre fuseau horaire : 6h UTC = 7h CEST (été) ou 8h CET (hiver)
+    - cron: '0 6 * * *'
+
+  # Permet de lancer manuellement depuis GitHub
+  workflow_dispatch:
+
+jobs:
+  send-suggestions:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Cloner le repo
+        uses: actions/checkout@v4
+
+      - name: 🐍 Configurer Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: 📦 Installer les dépendances
+        run: |
+          python -m pip install --upgrade pip
+          pip install anthropic resend python-dotenv
+
+      - name: 🤖 Lancer le script de suggestions
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          SHOP_NAME: JADIS ET DEMAIN
+          ENABLED: 'true'
+        run: python generateur_story/send_suggestions.py
+
+      - name: ✅ Succès !
+        run: echo "✨ Suggestions envoyées avec succès !"
