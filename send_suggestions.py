@@ -1,6 +1,8 @@
 import os
 import anthropic
-import resend
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -17,9 +19,9 @@ if not ENABLED:
 
 # --- CONFIG ---
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
-RESEND_API_KEY = os.getenv("RESEND_API_KEY")
+GMAIL_PASSWORD = os.getenv("GMAIL_PASSWORD")
 EMAIL_TO = os.getenv("EMAIL_TO")
-EMAIL_FROM = os.getenv("EMAIL_FROM")  # ex: onboarding@resend.dev ou ton domaine vérifié
+EMAIL_FROM = os.getenv("EMAIL_FROM")  # ex: anttonrusso@gmail.com
 SHOP_NAME = os.getenv("SHOP_NAME", "notre magasin")
 
 def generate_suggestions():
@@ -54,8 +56,6 @@ Formate clairement chaque suggestion avec un numéro."""
     return message.content[0].text
 
 def send_email(suggestions):
-    resend.api_key = RESEND_API_KEY
-
     today = datetime.now().strftime("%A %d %B")
 
     html_content = f"""
@@ -85,15 +85,23 @@ def send_email(suggestions):
     </html>
     """
 
-    params = {
-        "from": EMAIL_FROM,
-        "to": [EMAIL_TO],
-        "subject": f"✨ Vos 5 idées de posts Instagram - {today}",
-        "html": html_content,
-    }
+    # Créer le message email
+    msg = MIMEMultipart('alternative')
+    msg['Subject'] = f"✨ Vos 5 idées de posts Instagram - {today}"
+    msg['From'] = EMAIL_FROM
+    msg['To'] = EMAIL_TO
 
-    resend.Emails.send(params)
-    print(f"✅ Email envoyé à {EMAIL_TO}")
+    msg.attach(MIMEText(html_content, 'html'))
+
+    # Envoyer via Gmail SMTP
+    try:
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            server.login(EMAIL_FROM, GMAIL_PASSWORD)
+            server.sendmail(EMAIL_FROM, EMAIL_TO, msg.as_string())
+        print(f"✅ Email envoyé à {EMAIL_TO}")
+    except Exception as e:
+        print(f"❌ Erreur lors de l'envoi : {str(e)}")
+        raise
 
 if __name__ == "__main__":
     print("🤖 Génération des suggestions...")
