@@ -35,7 +35,7 @@ jobs:
           EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
           SHOP_NAME: JADIS ET DEMAIN
           ENABLED: 'true'
-        run: python generateur_story/send_suggestions.py
+        run: python send_suggestions.py
 
       - name: ✅ Succès !
         run: echo "✨ Suggestions envoyées avec succès !"
